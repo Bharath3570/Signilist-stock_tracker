@@ -33,6 +33,7 @@ const SignUp = () => {
 
     const onSubmit = async (data: SignUpFormData) => {
         try {
+            // sign up with email
             const result = await signUpWithEmail(data);
             if(result.success) router.push('/');
         } catch (e) {
@@ -60,7 +61,7 @@ const SignUp = () => {
                 <InputField
                     name="email"
                     label="Email"
-                    placeholder="contact@Neha.com"
+                    placeholder="contact@Stoxly.com"
                     register={register}
                     error={errors.email}
                     validation={{ required: 'Email address is required', pattern: /^\w+@\w+\.\w+$/, message: 'Email address is required' }}

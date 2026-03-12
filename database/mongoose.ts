@@ -1,0 +1,93 @@
+import mongoose from 'mongoose';
+
+type MongooseCache = {
+    conn: typeof mongoose | null;
+    promise: Promise<typeof mongoose> | null;
+};
+
+const encodeMongoCredential = (value: string) => {
+    try {
+        return encodeURIComponent(decodeURIComponent(value));
+    } catch {
+        return encodeURIComponent(value);
+    }
+};
+
+const normalizeMongoUri = (uri: string) => {
+    const schemeMatch = uri.match(/^mongodb(?:\+srv)?:\/\//);
+
+    if (!schemeMatch) {
+        return uri;
+    }
+
+    const scheme = schemeMatch[0];
+    const rest = uri.slice(scheme.length);
+    const atIndex = rest.lastIndexOf('@');
+
+    if (atIndex === -1) {
+        return uri;
+    }
+
+    const credentials = rest.slice(0, atIndex);
+    const hostAndPath = rest.slice(atIndex + 1);
+    const separatorIndex = credentials.indexOf(':');
+
+    if (separatorIndex === -1) {
+        return `${scheme}${encodeMongoCredential(credentials)}@${hostAndPath}`;
+    }
+
+    const username = credentials.slice(0, separatorIndex);
+    const password = credentials.slice(separatorIndex + 1);
+
+    return `${scheme}${encodeMongoCredential(username)}:${encodeMongoCredential(password)}@${hostAndPath}`;
+};
+
+const getMongoUri = () => {
+    const uri = process.env.MONGODB_URI?.trim();
+
+    if (!uri) {
+        throw new Error('MONGODB_URI must be set in .env');
+    }
+
+    return normalizeMongoUri(uri);
+};
+
+const getSafeMongoTarget = (uri: string) => {
+    try {
+        const parsed = new URL(uri);
+        return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+    } catch {
+        return 'invalid-uri';
+    }
+};
+
+declare global {
+    var mongooseCache: MongooseCache | undefined;
+}
+
+const cached = global.mongooseCache ?? (global.mongooseCache = { conn: null, promise: null });
+
+export const connectToDatabase = async () => {
+    const mongoUri = getMongoUri();
+
+    if (cached.conn && mongoose.connection.readyState === 1) {
+        return cached.conn;
+    }
+
+    if (!cached.promise) {
+        cached.promise = mongoose.connect(mongoUri, {
+            bufferCommands: false,
+            serverSelectionTimeoutMS: 10000,
+        });
+    }
+
+    try {
+        cached.conn = await cached.promise;
+        console.log(`MongoDB connected (${process.env.NODE_ENV ?? 'unknown'}) -> ${getSafeMongoTarget(mongoUri)}`);
+        return cached.conn;
+    } catch (error) {
+        cached.promise = null;
+        cached.conn = null;
+        throw error;
+    }
+};

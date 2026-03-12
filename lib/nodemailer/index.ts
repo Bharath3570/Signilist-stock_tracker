@@ -14,12 +14,11 @@ export const sendWelcomeEmail = async ({ email, name, intro }: WelcomeEmailData)
         .replace('{{name}}', name)
         .replace('{{intro}}', intro);
 
-    let subject = `stock market Application`;
     const mailOptions = {
-        from: `"Stoxly" <Stoxly@gmail.com>`,
+        from: `"Signalist" <signalist@jsmastery.pro>`,
         to: email,
-        subject: `Welcome to Stoxly  - your stock market toolkit is ready!`,
-        text: 'Thanks for joining Stoxly Application ',
+        subject: `Welcome to Signalist - your stock market toolkit is ready!`,
+        text: 'Thanks for joining Signalist',
         html: htmlTemplate,
     }
 
@@ -34,10 +33,10 @@ export const sendNewsSummaryEmail = async (
         .replace('{{newsContent}}', newsContent);
 
     const mailOptions = {
-        from: `"Stoxly News" <Stoxly@gmail.com>`,
+        from: `"Signalist News" <signalist@jsmastery.pro>`,
         to: email,
         subject: `📈 Market News Summary Today - ${date}`,
-        text: `Today's market news summary from Stoxly`,
+        text: `Today's market news summary from Signalist`,
         html: htmlTemplate,
     };
 

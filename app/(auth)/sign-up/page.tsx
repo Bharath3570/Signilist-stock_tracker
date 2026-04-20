@@ -33,7 +33,6 @@ const SignUp = () => {
 
     const onSubmit = async (data: SignUpFormData) => {
         try {
-            // sign up with email
             const result = await signUpWithEmail(data);
             if(result.success) router.push('/');
         } catch (e) {
@@ -52,7 +51,7 @@ const SignUp = () => {
                 <InputField
                     name="fullName"
                     label="Full Name"
-                    placeholder="Enter Your Name"
+                    placeholder="John Doe"
                     register={register}
                     error={errors.fullName}
                     validation={{ required: 'Full name is required', minLength: 2 }}
@@ -61,10 +60,10 @@ const SignUp = () => {
                 <InputField
                     name="email"
                     label="Email"
-                    placeholder="contact@Stoxly.com"
+                    placeholder="contact@jsmastery.com"
                     register={register}
                     error={errors.email}
-                    validation={{ required: 'Email address is required', pattern: /^\w+@\w+\.\w+$/, message: 'Email address is required' }}
+                    validation={{ required: 'Email name is required', pattern: /^\w+@\w+\.\w+$/, message: 'Email address is required' }}
                 />
 
                 <InputField
@@ -77,7 +76,6 @@ const SignUp = () => {
                     validation={{ required: 'Password is required', minLength: 8 }}
                 />
 
-                {/*Country*/}
                 <CountrySelectField
                     name="country"
                     label="Country"

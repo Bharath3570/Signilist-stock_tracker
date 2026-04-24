@@ -73,6 +73,12 @@ declare global {
         email: string;
     };
 
+    type UserForNewsEmail = {
+        id: string;
+        email: string;
+        name: string;
+    };
+
     type Stock = {
         symbol: string;
         name: string;
@@ -118,11 +124,13 @@ declare global {
 
     type ProfileData = {
         name?: string;
+        ticker?: string;
+        exchange?: string;
         marketCapitalization?: number;
     };
 
     type FinancialsData = {
-        metric?: { [key: string]: number };
+        metric?: { [key: string]: number | undefined };
     };
 
     type SelectedStock = {
@@ -136,16 +144,17 @@ declare global {
     };
 
     type StockWithData = {
-        userId: string;
+        id: string;
         symbol: string;
         company: string;
-        addedAt: Date;
+        addedAt?: Date | string;
         currentPrice?: number;
         changePercent?: number;
         priceFormatted?: string;
         changeFormatted?: string;
         marketCap?: string;
         peRatio?: string;
+        summaryWeight?: 'High' | 'Medium';
     };
 
     type AlertsListProps = {
@@ -166,15 +175,6 @@ declare global {
 
     type WatchlistNewsProps = {
         news?: MarketNewsArticle[];
-    };
-
-    type SearchCommandProps = {
-        open?: boolean;
-        setOpen?: (open: boolean) => void;
-        renderAs?: 'button' | 'text';
-        buttonLabel?: string;
-        buttonVariant?: 'primary' | 'secondary';
-        className?: string;
     };
 
     type AlertData = {

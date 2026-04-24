@@ -1,40 +1,52 @@
 import { Star } from 'lucide-react';
-import { searchStocks } from '@/lib/actions/finnhub.actions';
 import SearchCommand from '@/components/SearchCommand';
+import WatchlistNewsSection from '@/components/WatchlistNewsSection';
+import WatchlistSummaryPanel from '@/components/WatchlistSummaryPanel';
+import WatchlistTable from '@/components/WatchlistTable';
+import { getNews, searchStocks } from '@/lib/actions/finnhub.actions';
 import { getWatchlistWithData } from '@/lib/actions/watchlist.actions';
-import WatchlistTable from '@/components/WatchlistTable'; // ✅ default import
 
-const Watchlist = async () => {
-    const watchlist = await getWatchlistWithData();
-    const initialStocks = await searchStocks();
+export const dynamic = 'force-dynamic';
+
+const WatchlistPage = async () => {
+    const [watchlist, initialStocks] = await Promise.all([getWatchlistWithData(), searchStocks()]);
 
     if (watchlist.length === 0) {
         return (
-            <section className="flex watchlist-empty-container">
-                <div className="watchlist-empty">
-                    <Star className="watchlist-star" />
-                    <h2 className="empty-title">Your watchlist is empty</h2>
-                    <p className="empty-description">
-                        Start building your watchlist by searching for stocks and clicking the star icon.
+            <section className='watchlist-empty-container flex'>
+                <div className='watchlist-empty'>
+                    <Star className='watchlist-star' />
+                    <h2 className='empty-title'>Your watchlist is empty</h2>
+                    <p className='empty-description'>
+                        Save the stocks you care about most, then come back here for a focused table,
+                        watchlist-weighted summary, and tailored news.
                     </p>
+                    <SearchCommand initialStocks={initialStocks} />
                 </div>
-                <SearchCommand initialStocks={initialStocks} />
             </section>
         );
     }
 
+    const news = await getNews(watchlist.map((stock) => stock.symbol));
+
     return (
-        <section className="watchlist">
-            <div className="flex flex-col gap-6">
-                <div className="flex items-center justify-between">
-                    <h2 className="watchlist-title">Watchlist</h2>
-                    <SearchCommand initialStocks={initialStocks} />
+        <section className='space-y-10'>
+            <div className='watchlist-container'>
+                <div className='watchlist'>
+                    <div className='flex items-center justify-between gap-4'>
+                        <h1 className='watchlist-title'>Watchlist</h1>
+                        <SearchCommand initialStocks={initialStocks} label='Add Stock' />
+                    </div>
+
+                    <WatchlistTable watchlist={watchlist} />
                 </div>
 
-                <WatchlistTable watchlist={watchlist} />
+                <WatchlistSummaryPanel watchlist={watchlist} />
             </div>
+
+            <WatchlistNewsSection news={news.slice(0, 3)} />
         </section>
     );
 };
 
-export default Watchlist;
+export default WatchlistPage;

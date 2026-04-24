@@ -122,6 +122,8 @@ Between major sections, use:
 <div style="border-top: 1px solid #374151; margin: 32px 0 24px 0;"></div>
 
 Content guidelines:
+- If watchedSymbols are provided, prioritize those tickers first and make the summary clearly feel personalized to that watchlist.
+- Call out top gainers, top losers, and the overall direction of the watched names when the data supports it.
 - Organize news into logical sections with icons (📊 Market Overview, 📈 Top Gainers, 📉 Top Losers, 🔥 Breaking News, 💼 Earnings Reports, 🏛️ Economic Data, etc.)
 - NEVER repeat section headings - use each section type only once per email
 - For each news article, include its actual headline/title from the news data

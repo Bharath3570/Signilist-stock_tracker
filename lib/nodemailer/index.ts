@@ -1,5 +1,10 @@
 import nodemailer from 'nodemailer';
-import {WELCOME_EMAIL_TEMPLATE, NEWS_SUMMARY_EMAIL_TEMPLATE} from "@/lib/nodemailer/templates";
+import {
+    NEWS_SUMMARY_EMAIL_TEMPLATE,
+    STOCK_ALERT_LOWER_EMAIL_TEMPLATE,
+    STOCK_ALERT_UPPER_EMAIL_TEMPLATE,
+    WELCOME_EMAIL_TEMPLATE,
+} from "@/lib/nodemailer/templates";
 
 export const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -41,4 +46,37 @@ export const sendNewsSummaryEmail = async (
     };
 
     await transporter.sendMail(mailOptions);
+};
+
+export const sendStockPriceAlertEmail = async (params: {
+    email: string;
+    symbol: string;
+    company: string;
+    currentPrice: string;
+    targetPrice: string;
+    condition: '>' | '<';
+    timestamp: string;
+}) => {
+    const template =
+        params.condition === '>' ? STOCK_ALERT_UPPER_EMAIL_TEMPLATE : STOCK_ALERT_LOWER_EMAIL_TEMPLATE;
+
+    const htmlTemplate = template
+        .replaceAll('{{symbol}}', params.symbol)
+        .replaceAll('{{company}}', params.company)
+        .replaceAll('{{currentPrice}}', params.currentPrice)
+        .replaceAll('{{targetPrice}}', params.targetPrice)
+        .replaceAll('{{timestamp}}', params.timestamp);
+
+    const subject =
+        params.condition === '>'
+            ? `Price Alert: ${params.symbol} crossed above ${params.targetPrice}`
+            : `Price Alert: ${params.symbol} dropped below ${params.targetPrice}`;
+
+    await transporter.sendMail({
+        from: `"Signalist Alerts" <signalist-alerts@jsmastery.pro>`,
+        to: params.email,
+        subject,
+        text: `${params.symbol} price alert triggered (${params.condition} ${params.targetPrice}). Current: ${params.currentPrice}`,
+        html: htmlTemplate,
+    });
 };

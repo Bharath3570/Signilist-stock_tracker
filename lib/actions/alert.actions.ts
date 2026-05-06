@@ -6,6 +6,8 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/better-auth/auth';
 import { connectToDatabase } from '@/database/mongoose';
 import { Alert } from '@/database/models/alert.model';
+import { AlertHistory } from '@/database/models/alert-history.model';
+import { createNotification } from '@/lib/actions/notification.actions';
 
 const requireSessionUser = async () => {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -68,6 +70,14 @@ export async function createAlert(input: {
         revalidatePath('/alerts');
         revalidatePath('/watchlist');
 
+        await createNotification({
+            userEmail,
+            title: 'Alert created',
+            message: `${alertName} is now watching ${symbol} for Price ${condition} $${targetPrice.toFixed(2)}.`,
+            category: 'alert',
+            href: '/alerts',
+        });
+
         return { success: true };
     } catch (error) {
         console.error('createAlert error:', error);
@@ -85,6 +95,16 @@ export async function getUserAlerts() {
     return JSON.parse(JSON.stringify(alerts));
 }
 
+export async function getUserAlertHistory(limit = 12) {
+    const user = await requireSessionUser();
+    const userEmail = user.email.toLowerCase();
+
+    await connectToDatabase();
+
+    const history = await AlertHistory.find({ userEmail }).sort({ triggeredAt: -1 }).limit(limit).lean();
+    return JSON.parse(JSON.stringify(history));
+}
+
 export async function deleteAlert(alertId: string) {
     try {
         const user = await requireSessionUser();
@@ -96,6 +116,14 @@ export async function deleteAlert(alertId: string) {
 
         revalidatePath('/alerts');
         revalidatePath('/watchlist');
+
+        await createNotification({
+            userEmail,
+            title: 'Alert removed',
+            message: 'One of your price alerts was deleted.',
+            category: 'alert',
+            href: '/alerts',
+        });
 
         return { success: true };
     } catch (error) {
@@ -127,10 +155,28 @@ export async function updateAlert(input: {
             if (condition) update.condition = condition;
         }
 
-        await Alert.updateOne({ _id: input.alertId, userEmail }, { $set: update });
+        try {
+            await Alert.updateOne({ _id: input.alertId, userEmail }, { $set: update });
+        } catch (err: unknown) {
+            const maybeDuplicate =
+                typeof err === 'object' && err !== null && 'code' in err && (err as { code?: unknown }).code === 11000;
+
+            if (maybeDuplicate) {
+                return { success: false, error: 'An alert with the same symbol, condition, and target already exists.' };
+            }
+            throw err;
+        }
 
         revalidatePath('/alerts');
         revalidatePath('/watchlist');
+
+        await createNotification({
+            userEmail,
+            title: 'Alert updated',
+            message: 'One of your price alerts was updated.',
+            category: 'alert',
+            href: '/alerts',
+        });
 
         return { success: true };
     } catch (error) {

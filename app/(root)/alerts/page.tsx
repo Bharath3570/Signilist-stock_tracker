@@ -1,5 +1,6 @@
 import AlertCard from '@/components/AlertCard';
-import { getUserAlerts } from '@/lib/actions/alert.actions';
+import AlertHistoryPanel from '@/components/AlertHistoryPanel';
+import { getUserAlertHistory, getUserAlerts } from '@/lib/actions/alert.actions';
 import { getStockDetails } from '@/lib/actions/finnhub.actions';
 import { formatChangePercent, formatPrice } from '@/lib/utils';
 
@@ -19,17 +20,23 @@ type StoredAlert = {
 type ConditionTone = 'positive' | 'negative';
 
 const AlertsPage = async () => {
-    const alerts = (await getUserAlerts()) as StoredAlert[];
+    const [alerts, history] = await Promise.all([
+        getUserAlerts() as Promise<StoredAlert[]>,
+        getUserAlertHistory(10),
+    ]);
 
     if (!alerts || alerts.length === 0) {
         return (
-            <section className='watchlist-empty-container flex'>
-                <div className='watchlist-empty'>
-                    <h2 className='empty-title'>No alerts yet</h2>
-                    <p className='empty-description'>
-                        Go to your watchlist and click Add Alert to create your first price alert.
-                    </p>
+            <section className='space-y-8'>
+                <div className='watchlist-empty-container flex'>
+                    <div className='watchlist-empty'>
+                        <h2 className='empty-title'>No alerts yet</h2>
+                        <p className='empty-description'>
+                            Go to your watchlist and click Add Alert to create your first price alert.
+                        </p>
+                    </div>
                 </div>
+                <AlertHistoryPanel history={history} />
             </section>
         );
     }
@@ -56,6 +63,8 @@ const AlertsPage = async () => {
                 symbol,
                 currentPrice,
                 changeText: changeText || '',
+                condition,
+                targetPrice: target,
                 conditionText: `Price ${condition} $${target.toFixed(2)}`,
                 conditionTone,
             };
@@ -71,6 +80,7 @@ const AlertsPage = async () => {
                         <AlertCard key={card.id} {...card} />
                     ))}
                 </div>
+                <AlertHistoryPanel history={history} />
             </div>
         </section>
     );

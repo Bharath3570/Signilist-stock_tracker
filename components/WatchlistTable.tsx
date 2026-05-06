@@ -25,6 +25,7 @@ export default function WatchlistTable({ watchlist }: WatchlistTableProps) {
         <>
             {selectedStock ? (
                 <CreateAlertModal
+                    key={`${selectedStock.symbol}-${alertOpen ? 'open' : 'closed'}`}
                     open={alertOpen}
                     onOpenChange={(open) => {
                         setAlertOpen(open);

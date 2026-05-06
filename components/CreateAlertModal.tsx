@@ -6,39 +6,64 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createAlert } from '@/lib/actions/alert.actions';
+import { createAlert, updateAlert } from '@/lib/actions/alert.actions';
 
 type Props = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     symbol: string;
     company: string;
+    mode?: 'create' | 'edit';
+    alertId?: string;
+    initialAlertName?: string;
+    initialCondition?: '>' | '<';
+    initialTargetPrice?: number;
 };
 
-export default function CreateAlertModal({ open, onOpenChange, symbol, company }: Props) {
+export default function CreateAlertModal({
+    open,
+    onOpenChange,
+    symbol,
+    company,
+    mode = 'create',
+    alertId,
+    initialAlertName,
+    initialCondition = '>',
+    initialTargetPrice,
+}: Props) {
     const [isPending, startTransition] = useTransition();
-    const [alertName, setAlertName] = useState(() => `${company || symbol} Alert`);
-    const [condition, setCondition] = useState<'>' | '<'>('>');
-    const [targetPrice, setTargetPrice] = useState<string>('');
+    const [alertName, setAlertName] = useState(initialAlertName ?? `${company || symbol} Alert`);
+    const [condition, setCondition] = useState<'>' | '<'>(initialCondition);
+    const [targetPrice, setTargetPrice] = useState<string>(
+        typeof initialTargetPrice === 'number' ? String(initialTargetPrice) : ''
+    );
 
     const submit = () => {
         startTransition(async () => {
             const priceValue = Number(targetPrice);
 
-            const result = await createAlert({
-                symbol,
-                company,
-                alertName,
-                condition,
-                targetPrice: priceValue,
-            });
+            const result =
+                mode === 'edit' && alertId
+                    ? await updateAlert({
+                          alertId,
+                          alertName,
+                          condition,
+                          targetPrice: priceValue,
+                      })
+                    : await createAlert({
+                          symbol,
+                          company,
+                          alertName,
+                          condition,
+                          targetPrice: priceValue,
+                      });
 
             if (!result.success) {
-                toast.error(result.error ?? 'Failed to create alert');
+                toast.error(result.error ?? `Failed to ${mode} alert`);
                 return;
             }
 
-            toast.success('Alert created', {
+            toast.success(mode === 'edit' ? 'Alert updated' : 'Alert created', {
                 description: `${symbol} ${condition} ${targetPrice}`,
             });
 
@@ -50,7 +75,9 @@ export default function CreateAlertModal({ open, onOpenChange, symbol, company }
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className='alert-dialog'>
                 <DialogHeader>
-                    <DialogTitle className='alert-title'>Create Price Alert</DialogTitle>
+                    <DialogTitle className='alert-title'>
+                        {mode === 'edit' ? 'Edit Price Alert' : 'Create Price Alert'}
+                    </DialogTitle>
                 </DialogHeader>
 
                 <div className='space-y-5'>
@@ -112,7 +139,7 @@ export default function CreateAlertModal({ open, onOpenChange, symbol, company }
                         className='yellow-btn w-full h-12'
                         onClick={submit}
                     >
-                        {isPending ? 'Creating...' : 'Create Alert'}
+                        {isPending ? (mode === 'edit' ? 'Saving...' : 'Creating...') : mode === 'edit' ? 'Save Changes' : 'Create Alert'}
                     </Button>
                 </div>
             </DialogContent>

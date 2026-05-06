@@ -8,6 +8,8 @@ import { getNews, getStockDetails } from "@/lib/actions/finnhub.actions";
 import { getFormattedTodayDate } from "@/lib/utils";
 import { connectToDatabase } from "@/database/mongoose";
 import { Alert } from "@/database/models/alert.model";
+import { AlertHistory } from "@/database/models/alert-history.model";
+import { Notification } from "@/database/models/notification.model";
 
 export const sendSignUpEmail = inngest.createFunction(
     { id: 'sign-up-email' },
@@ -37,7 +39,7 @@ export const sendSignUpEmail = inngest.createFunction(
 
         await step.run('send-welcome-email', async () => {
             const part = response.candidates?.[0]?.content?.parts?.[0];
-            const introText = (part && 'text' in part ? part.text : null) ||'Thanks for joining Signalist. You now have the tools to track markets and make smarter moves.'
+            const introText = (part && 'text' in part ? part.text : null) ||'Thanks for joining Stoxly. You now have the tools to track markets and make smarter moves.'
 
             const { data: { email, name } } = event;
 
@@ -175,6 +177,30 @@ export const checkPriceAlerts = inngest.createFunction(
                         targetPrice: `$${target.toFixed(2)}`,
                         condition,
                         timestamp: new Date().toLocaleString('en-US', { timeZone: 'UTC' }),
+                    });
+                });
+
+                await step.run(`record-alert-history-${alertId}`, async () => {
+                    await AlertHistory.create({
+                        userEmail,
+                        alertId,
+                        alertName: String(alert.alertName || `${symbol} Alert`),
+                        symbol,
+                        company: String(alert.company || stock?.company || symbol),
+                        condition,
+                        targetPrice: target,
+                        triggerPrice: current,
+                        triggeredAt: new Date(),
+                    });
+
+                    await Notification.create({
+                        userEmail,
+                        title: 'Alert triggered',
+                        message: `${symbol} hit your alert condition at $${current.toFixed(2)}.`,
+                        category: 'alert',
+                        href: '/alerts',
+                        isRead: false,
+                        createdAt: new Date(),
                     });
                 });
 

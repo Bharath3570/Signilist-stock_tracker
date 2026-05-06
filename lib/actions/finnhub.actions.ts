@@ -13,7 +13,6 @@ import {
 import { getCurrentUserWatchlistSymbols } from './watchlist.actions';
 
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
-const NEXT_PUBLIC_FINNHUB_API_KEY = process.env.NEXT_PUBLIC_FINNHUB_API_KEY ?? '';
 
 type FinnhubProfileLookup = {
     name?: string;
@@ -101,17 +100,22 @@ export async function searchStocks(query?: string): Promise<StockWithWatchlistSt
             results = Array.isArray(data?.result) ? data.result : [];
         }
 
-        return results.slice(0, 15).map((stock) => {
+        const uniqueResults = results.reduce<StockWithWatchlistStatus[]>((acc, stock) => {
             const symbol = (stock.symbol || '').toUpperCase();
+            if (!symbol || acc.some((item) => item.symbol === symbol)) return acc;
 
-            return {
+            acc.push({
                 symbol,
                 name: stock.description || symbol,
                 exchange: stock.displaySymbol || stock.exchange || 'US',
                 type: stock.type || 'Stock',
                 isInWatchlist: watchlistSymbols.has(symbol),
-            };
-        });
+            });
+
+            return acc;
+        }, []);
+
+        return uniqueResults.slice(0, 15);
     } catch (error) {
         console.error('searchStocks error:', error);
         return [];

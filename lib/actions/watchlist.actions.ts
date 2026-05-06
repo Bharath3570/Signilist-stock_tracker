@@ -7,6 +7,7 @@ import { auth } from '@/lib/better-auth/auth';
 import { connectToDatabase } from '@/database/mongoose';
 import { Watchlist } from '@/database/models/watchlist.model';
 import { formatChangePercent, formatMarketCapValue, formatPrice } from '@/lib/utils';
+import { createNotification } from '@/lib/actions/notification.actions';
 
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
 
@@ -96,12 +97,20 @@ export async function addToWatchlist(symbol: string, company: string) {
                     addedAt: new Date(),
                 },
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
         );
 
         revalidatePath('/');
         revalidatePath('/watchlist');
         revalidatePath(`/stocks/${cleanedSymbol}`);
+
+        await createNotification({
+            userEmail: user.email,
+            title: 'Watchlist updated',
+            message: `${cleanedSymbol} was added to your watchlist.`,
+            category: 'watchlist',
+            href: '/watchlist',
+        });
 
         return { success: true };
     } catch (error) {
@@ -132,6 +141,14 @@ export async function removeFromWatchlist(symbol: string) {
         revalidatePath('/');
         revalidatePath('/watchlist');
         revalidatePath(`/stocks/${cleanedSymbol}`);
+
+        await createNotification({
+            userEmail: user.email,
+            title: 'Watchlist updated',
+            message: `${cleanedSymbol} was removed from your watchlist.`,
+            category: 'watchlist',
+            href: '/watchlist',
+        });
 
         return { success: true };
     } catch (error) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Loader2, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,13 @@ export default function SearchCommand({
     const [stocks, setStocks] = useState<StockWithWatchlistStatus[]>(initialStocks);
 
     const isSearchMode = !!searchTerm.trim();
-    const displayStocks = isSearchMode ? stocks : stocks.slice(0, 10);
+    const displayStocks = useMemo(() => {
+        const uniqueStocks = stocks.filter((stock, index, currentStocks) => {
+            return currentStocks.findIndex((item) => item.symbol === stock.symbol) === index;
+        });
+
+        return isSearchMode ? uniqueStocks : uniqueStocks.slice(0, 10);
+    }, [isSearchMode, stocks]);
 
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
@@ -107,8 +113,8 @@ export default function SearchCommand({
                                 {isSearchMode ? 'Search results' : 'Popular stocks'} ({displayStocks.length})
                             </div>
 
-                            {displayStocks.map((stock) => (
-                                <li key={stock.symbol} className='search-item'>
+                            {displayStocks.map((stock, index) => (
+                                <li key={`${stock.symbol}-${stock.exchange}-${index}`} className='search-item'>
                                     <div className='search-item-link'>
                                         <Link
                                             href={`/stocks/${encodeURIComponent(stock.symbol)}`}

@@ -38,7 +38,7 @@ export const sendNewsSummaryEmail = async (
         .replace('{{newsContent}}', newsContent);
 
     const mailOptions = {
-        from: `"Signalist News" <signalist@jsmastery.pro>`,
+        from: `"Stoxly News" <stoxly@jsmastery.pro>`,
         to: email,
         subject: `📈 Market News Summary Today - ${date}`,
         text: `Today's market news summary from Stoxly`,
@@ -73,7 +73,7 @@ export const sendStockPriceAlertEmail = async (params: {
             : `Price Alert: ${params.symbol} dropped below ${params.targetPrice}`;
 
     await transporter.sendMail({
-        from: `"Signalist Alerts" <signalist-alerts@jsmastery.pro>`,
+        from: `"Stoxly Alerts" <stoxly-alerts@jsmastery.pro>`,
         to: params.email,
         subject,
         text: `${params.symbol} price alert triggered (${params.condition} ${params.targetPrice}). Current: ${params.currentPrice}`,

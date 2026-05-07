@@ -12,8 +12,7 @@ import { AlertHistory } from "@/database/models/alert-history.model";
 import { Notification } from "@/database/models/notification.model";
 
 export const sendSignUpEmail = inngest.createFunction(
-    { id: 'sign-up-email' },
-    { event: 'app/user.created'},
+    { id: 'sign-up-email', triggers: [{ event: 'app/user.created' }] },
     async ({ event, step }) => {
         const userProfile = `
             - Country: ${event.data.country}
@@ -54,8 +53,7 @@ export const sendSignUpEmail = inngest.createFunction(
 )
 
 export const sendDailyNewsSummary = inngest.createFunction(
-    { id: 'daily-news-summary' },
-    [ { event: 'app/send.daily.news' }, { cron: '0 12 * * *' } ],
+    { id: 'daily-news-summary', triggers: [{ event: 'app/send.daily.news' }, { cron: '0 12 * * *' }] },
     async ({ step }) => {
         // Step #1: Get all users for news delivery
         const users = await step.run('get-all-users', getAllUsersForNewsEmail)
@@ -132,8 +130,7 @@ export const sendDailyNewsSummary = inngest.createFunction(
 )
 
 export const checkPriceAlerts = inngest.createFunction(
-    { id: 'check-price-alerts' },
-    [{ event: 'app/alerts.check' }, { cron: '*/5 * * * *' }],
+    { id: 'check-price-alerts', triggers: [{ event: 'app/alerts.check' }, { cron: '*/5 * * * *' }] },
     async ({ step }) => {
         await step.run('connect-db', connectToDatabase);
 

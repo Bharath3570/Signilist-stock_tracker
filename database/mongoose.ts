@@ -43,13 +43,20 @@ const normalizeMongoUri = (uri: string) => {
 };
 
 const getMongoUri = () => {
-    const uri = process.env.MONGODB_URI?.trim();
+    const raw = process.env.MONGODB_URI?.trim();
 
-    if (!uri) {
+    if (!raw) {
         throw new Error('MONGODB_URI must be set in .env');
     }
 
-    return normalizeMongoUri(uri);
+    // Vercel env var UI sometimes ends up with wrapped quotes; strip a single
+    // matching pair to avoid MongoParseError: Invalid scheme.
+    const unquoted =
+        (raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))
+            ? raw.slice(1, -1).trim()
+            : raw;
+
+    return normalizeMongoUri(unquoted);
 };
 
 const getSafeMongoTarget = (uri: string) => {

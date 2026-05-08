@@ -23,27 +23,45 @@ export const sendSignUpEmail = inngest.createFunction(
 
         const prompt = PERSONALIZED_WELCOME_EMAIL_PROMPT.replace('{{userProfile}}', userProfile)
 
-        const response = await step.ai.infer('generate-welcome-intro', {
-            model: step.ai.models.gemini({ model: 'gemini-2.5-flash-lite' }),
-            body: {
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [
-                            { text: prompt }
-                        ]
-                    }]
+        const introText = await step.run('generate-welcome-intro', async () => {
+            const fallback =
+                'Thanks for joining Stoxly. You now have the tools to track markets and make smarter moves.';
+
+            // If AI isn't configured, don't block welcome email.
+            if (!process.env.GEMINI_API_KEY) return fallback;
+
+            try {
+                const response = await Promise.race([
+                    step.ai.infer('generate-welcome-intro-ai', {
+                        model: step.ai.models.gemini({ model: 'gemini-2.5-flash-lite' }),
+                        body: {
+                            contents: [
+                                {
+                                    role: 'user',
+                                    parts: [{ text: prompt }],
+                                },
+                            ],
+                        },
+                    }),
+                    new Promise<never>((_, reject) =>
+                        setTimeout(() => reject(new Error('AI intro timed out')), 8000)
+                    ),
+                ]);
+
+                const part = response.candidates?.[0]?.content?.parts?.[0];
+                const text = part && 'text' in part ? part.text : null;
+                return text || fallback;
+            } catch (error) {
+                // If AI fails (quota/network/key), still send a welcome email.
+                console.error('welcome-email: AI intro generation failed', error);
+                return fallback;
             }
-        })
+        });
 
         await step.run('send-welcome-email', async () => {
-            const part = response.candidates?.[0]?.content?.parts?.[0];
-            const introText = (part && 'text' in part ? part.text : null) ||'Thanks for joining Stoxly. You now have the tools to track markets and make smarter moves.'
-
             const { data: { email, name } } = event;
-
             return await sendWelcomeEmail({ email, name, intro: introText });
-        })
+        });
 
         return {
             success: true,
@@ -53,7 +71,8 @@ export const sendSignUpEmail = inngest.createFunction(
 )
 
 export const sendDailyNewsSummary = inngest.createFunction(
-    { id: 'daily-news-summary', triggers: [{ event: 'app/send.daily.news' }, { cron: '0 12 * * *' }] },
+    // Inngest cron is UTC. 09:30 IST = 04:00 UTC.
+    { id: 'daily-news-summary', triggers: [{ event: 'app/send.daily.news' }, { cron: '0 4 * * *' }] },
     async ({ step }) => {
         // Step #1: Get all users for news delivery
         const users = await step.run('get-all-users', getAllUsersForNewsEmail)

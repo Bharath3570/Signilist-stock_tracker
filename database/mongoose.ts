@@ -60,12 +60,16 @@ const getMongoUri = () => {
 };
 
 const getSafeMongoTarget = (uri: string) => {
-    try {
-        const parsed = new URL(uri);
-        return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
-    } catch {
-        return 'invalid-uri';
-    }
+    const schemeMatch = uri.match(/^mongodb(?:\+srv)?:\/\//);
+    if (!schemeMatch) return 'invalid-uri';
+
+    const scheme = schemeMatch[0];
+    const rest = uri.slice(scheme.length);
+    const atIndex = rest.lastIndexOf('@');
+    const withoutCreds = atIndex === -1 ? rest : rest.slice(atIndex + 1);
+    const withoutQuery = withoutCreds.split('?')[0] ?? withoutCreds;
+
+    return `${scheme}${withoutQuery}`;
 };
 
 declare global {

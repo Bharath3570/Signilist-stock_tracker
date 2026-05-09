@@ -32,13 +32,27 @@ const SignUp = () => {
     }, );
 
     const onSubmit = async (data: SignUpFormData) => {
+        const toastId = toast.loading('Creating your account...');
         try {
             const result = await signUpWithEmail(data);
-            if(result.success) router.push('/');
+            if (result.success) {
+                toast.success('Account created', {
+                    id: toastId,
+                    description: 'Welcome to Stoxly. Redirecting…',
+                });
+                router.push('/');
+                return;
+            }
+
+            toast.error('Sign up failed', {
+                id: toastId,
+                description: result.error ?? 'Failed to create an account.',
+            });
         } catch (e) {
             console.error(e);
             toast.error('Sign up failed', {
-                description: e instanceof Error ? e.message : 'Failed to create an account.'
+                id: toastId,
+                description: e instanceof Error ? e.message : 'Failed to create an account.',
             })
         }
     }
@@ -69,11 +83,14 @@ const SignUp = () => {
                 <InputField
                     name="password"
                     label="Password"
-                    placeholder="Enter a strong password"
+                    placeholder="At least 8 characters"
                     type="password"
                     register={register}
                     error={errors.password}
-                    validation={{ required: 'Password is required', minLength: 8 }}
+                    validation={{
+                        required: 'Password is required',
+                        minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                    }}
                 />
 
                 <CountrySelectField
@@ -115,7 +132,7 @@ const SignUp = () => {
                 />
 
                 <Button type="submit" disabled={isSubmitting} className="yellow-btn w-full mt-5">
-                    {isSubmitting ? 'Creating Account' : 'Start Your Investing Journey'}
+                    {isSubmitting ? 'Creating account…' : 'Start Your Investing Journey'}
                 </Button>
 
                 <FooterLink text="Already have an account?" linkText="Sign in" href="/sign-in" />

@@ -1,7 +1,6 @@
 'use server';
 
 import { headers } from 'next/headers';
-import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/better-auth/auth';
 import { connectToDatabase } from '@/database/mongoose';
@@ -306,8 +305,6 @@ export async function getDailyInsights(options?: { force?: boolean }): Promise<I
         },
         { upsert: true, returnDocument: 'after' }
     );
-
-    revalidatePath('/insights');
 
     return { ok: true, payload: finalPayload, used, cached: false };
 }

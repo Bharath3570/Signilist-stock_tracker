@@ -2,7 +2,9 @@
 'use client';
 
 import { useState } from 'react';
+import type { ComponentType } from 'react';
 import { Control, Controller, FieldError } from 'react-hook-form';
+import * as Flags from 'country-flag-icons/react/3x2';
 import {
     Popover,
     PopoverContent,
@@ -30,6 +32,16 @@ type CountrySelectProps = {
     required?: boolean;
 };
 
+function FlagIcon({ code }: { code: string }) {
+    const upper = code.toUpperCase();
+    const FlagComponent = (Flags as Record<string, ComponentType<{ title?: string; className?: string }>>)[upper];
+    if (FlagComponent) return <FlagComponent title={upper} className='h-4 w-6 rounded-sm' />;
+
+    const codePoints = upper.split('').map((char) => 127397 + char.charCodeAt(0));
+    const emoji = String.fromCodePoint(...codePoints);
+    return <span aria-hidden='true'>{emoji}</span>;
+}
+
 const CountrySelect = ({
                            value,
                            onChange,
@@ -42,15 +54,6 @@ const CountrySelect = ({
     // Get country options with flags
     const countries = countryList().getData();
 
-    // Helper function to get flag emoji
-    const getFlagEmoji = (countryCode: string) => {
-        const codePoints = countryCode
-            .toUpperCase()
-            .split('')
-            .map((char) => 127397 + char.charCodeAt(0));
-        return String.fromCodePoint(...codePoints);
-    };
-
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -62,9 +65,9 @@ const CountrySelect = ({
                 >
                     {value ? (
                         <span className='flex items-center gap-2'>
-              <span>{getFlagEmoji(value)}</span>
-              <span>{countries.find((c) => c.value === value)?.label}</span>
-            </span>
+                            <FlagIcon code={value} />
+                            <span>{countries.find((c) => c.value === value)?.label}</span>
+                        </span>
                     ) : (
                         'Select your country...'
                     )}
@@ -102,9 +105,9 @@ const CountrySelect = ({
                                         )}
                                     />
                                     <span className='flex items-center gap-2'>
-                    <span>{getFlagEmoji(country.value)}</span>
-                    <span>{country.label}</span>
-                  </span>
+                                        <FlagIcon code={country.value} />
+                                        <span>{country.label}</span>
+                                    </span>
                                 </CommandItem>
                             ))}
                         </CommandGroup>

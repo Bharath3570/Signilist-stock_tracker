@@ -14,11 +14,31 @@ import { Notification } from "@/database/models/notification.model";
 export const sendSignUpEmail = inngest.createFunction(
     { id: 'sign-up-email', triggers: [{ event: 'app/user.created' }] },
     async ({ event, step }) => {
+        // When triggered by the real `app/user.created` event, `event.data` contains the payload we send.
+        // When manually invoked from the dashboard, the payload shape can differ. Be defensive.
+        const payload: any = (event as any)?.data ?? {};
+        const recipientEmail: string =
+            payload.email ??
+            payload.user?.email ??
+            payload.data?.email ??
+            payload.userEmail ??
+            '';
+        const recipientName: string = payload.name ?? payload.user?.name ?? payload.data?.name ?? 'Investor';
+
+        if (!recipientEmail) {
+            // Avoid Nodemailer "No recipients defined" failures.
+            console.warn('sign-up-email: missing recipient email in event payload', {
+                eventName: (event as any)?.name,
+                payloadKeys: payload && typeof payload === 'object' ? Object.keys(payload) : typeof payload,
+            });
+            return { success: false, message: 'No recipient email provided (did you use Invoke instead of Send test event?)' };
+        }
+
         const userProfile = `
-            - Country: ${event.data.country}
-            - Investment goals: ${event.data.investmentGoals}
-            - Risk tolerance: ${event.data.riskTolerance}
-            - Preferred industry: ${event.data.preferredIndustry}
+            - Country: ${payload.country ?? payload.data?.country ?? 'N/A'}
+            - Investment goals: ${payload.investmentGoals ?? payload.data?.investmentGoals ?? 'N/A'}
+            - Risk tolerance: ${payload.riskTolerance ?? payload.data?.riskTolerance ?? 'N/A'}
+            - Preferred industry: ${payload.preferredIndustry ?? payload.data?.preferredIndustry ?? 'N/A'}
         `
 
         const prompt = PERSONALIZED_WELCOME_EMAIL_PROMPT.replace('{{userProfile}}', userProfile)
@@ -59,8 +79,7 @@ export const sendSignUpEmail = inngest.createFunction(
         });
 
         await step.run('send-welcome-email', async () => {
-            const { data: { email, name } } = event;
-            return await sendWelcomeEmail({ email, name, intro: introText });
+            return await sendWelcomeEmail({ email: recipientEmail, name: recipientName, intro: introText });
         });
 
         return {

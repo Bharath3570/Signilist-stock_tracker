@@ -1,12 +1,14 @@
-import {Label} from "@/components/ui/label";
-import {Controller} from "react-hook-form";
+"use client";
+
+import { Label } from "@/components/ui/label";
+import { Controller } from "react-hook-form";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 const SelectField = ({ name, label, placeholder, options, control, error, required = false }: SelectFieldProps) => {
     return (
@@ -36,6 +38,7 @@ const SelectField = ({ name, label, placeholder, options, control, error, requir
                 )}
             />
         </div>
-    )
-}
-export default SelectField
+    );
+};
+
+export default SelectField;

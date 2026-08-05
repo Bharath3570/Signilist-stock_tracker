@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import {useForm} from "react-hook-form";
-import {Button} from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 import InputField from "@/components/forms/InputField";
 import SelectField from "@/components/forms/SelectField";
-import {INVESTMENT_GOALS, PREFERRED_INDUSTRIES, RISK_TOLERANCE_OPTIONS} from "@/lib/constants";
-import {CountrySelectField} from "@/components/forms/CountrySelectField";
+import { INVESTMENT_GOALS, PREFERRED_INDUSTRIES, RISK_TOLERANCE_OPTIONS } from "@/lib/constants";
+import { CountrySelectField } from "@/components/forms/CountrySelectField";
 import FooterLink from "@/components/forms/FooterLink";
-import {signUpWithEmail} from "@/lib/actions/auth.actions";
-import {useRouter} from "next/navigation";
-import {toast} from "sonner";
+import { signUpWithEmail } from "@/lib/actions/auth.actions";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const SignUp = () => {
-    const router = useRouter()
+    const router = useRouter();
     const {
         register,
         handleSubmit,
@@ -20,42 +20,44 @@ const SignUp = () => {
         formState: { errors, isSubmitting },
     } = useForm<SignUpFormData>({
         defaultValues: {
-            fullName: '',
-            email: '',
-            password: '',
-            country: 'US',
-            investmentGoals: 'Growth',
-            riskTolerance: 'Medium',
-            preferredIndustry: 'Technology'
+            fullName: "",
+            email: "",
+            password: "",
+            country: "US",
+            investmentGoals: "Growth",
+            riskTolerance: "Medium",
+            preferredIndustry: "Technology",
         },
-        mode: 'onBlur'
-    }, );
+        mode: "onBlur",
+    });
 
     const onSubmit = async (data: SignUpFormData) => {
-        const toastId = toast.loading('Creating your account...');
+        const toastId = toast.loading("Creating your account...");
+
         try {
             const result = await signUpWithEmail(data);
+
             if (result.success) {
-                toast.success('Account created', {
+                toast.success("Account created", {
                     id: toastId,
-                    description: 'Welcome to Stoxly. Redirecting…',
+                    description: "Welcome to Stoxly. Redirecting...",
                 });
-                router.push('/');
+                router.push("/");
                 return;
             }
 
-            toast.error('Sign up failed', {
+            toast.error("Sign up failed", {
                 id: toastId,
-                description: result.error ?? 'Failed to create an account.',
+                description: result.error ?? "Failed to create an account.",
             });
         } catch (e) {
             console.error(e);
-            toast.error('Sign up failed', {
+            toast.error("Sign up failed", {
                 id: toastId,
-                description: e instanceof Error ? e.message : 'Failed to create an account.',
-            })
+                description: e instanceof Error ? e.message : "Failed to create an account.",
+            });
         }
-    }
+    };
 
     return (
         <>
@@ -68,7 +70,10 @@ const SignUp = () => {
                     placeholder="Enter Your Name"
                     register={register}
                     error={errors.fullName}
-                    validation={{ required: 'Full name is required', minLength: 2 }}
+                    validation={{
+                        required: "Full name is required",
+                        minLength: { value: 2, message: "Full name must be at least 2 characters" },
+                    }}
                 />
 
                 <InputField
@@ -77,7 +82,13 @@ const SignUp = () => {
                     placeholder="contact@stoxly.com"
                     register={register}
                     error={errors.email}
-                    validation={{ required: 'Email name is required', pattern: /^\w+@\w+\.\w+$/, message: 'Email address is required' }}
+                    validation={{
+                        required: "Email is required",
+                        pattern: {
+                            value: /^\w+@\w+\.\w+$/,
+                            message: "Enter a valid email address",
+                        },
+                    }}
                 />
 
                 <InputField
@@ -88,8 +99,8 @@ const SignUp = () => {
                     register={register}
                     error={errors.password}
                     validation={{
-                        required: 'Password is required',
-                        minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                        required: "Password is required",
+                        minLength: { value: 8, message: "Password must be at least 8 characters" },
                     }}
                 />
 
@@ -132,12 +143,13 @@ const SignUp = () => {
                 />
 
                 <Button type="submit" disabled={isSubmitting} className="yellow-btn w-full mt-5">
-                    {isSubmitting ? 'Creating account…' : 'Start Your Investing Journey'}
+                    {isSubmitting ? "Creating account..." : "Start Your Investing Journey"}
                 </Button>
 
                 <FooterLink text="Already have an account?" linkText="Sign in" href="/sign-in" />
             </form>
         </>
-    )
-}
+    );
+};
+
 export default SignUp;
